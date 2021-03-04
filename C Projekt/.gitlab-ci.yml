@@ -1,0 +1,474 @@
+image: yastefan/bs-ci:latest
+
+stages:
+- build
+- run
+
+build-01R:
+  tags:
+  - fai
+  stage: build
+  allow_failure: false
+  when: always
+  only:
+    changes:
+    - 01R_basics/**/*
+    - .gitlab-ci.yml
+    - TestBib/**/*
+  artifacts:
+    paths:
+    - 01R_basics/
+    expire_in: 1 week
+  script:
+  - cd 01R_basics;
+  - ls -alh | tee -a build.txt
+  - make helloworld
+  - make shellutilstest
+  - echo "===== after build =====" >> build.txt
+  - ls -alh | tee -a build.txt
+  
+run-01R:
+  tags:
+  - fai
+  stage: run
+  allow_failure: false
+  when: on_success
+  only:
+    changes:
+    - 01R_basics/**/*
+    - .gitlab-ci.yml
+    - TestBib/**/*
+  dependencies:
+  - build-01R
+  artifacts:
+    paths:
+    - 01R_basics/
+    expire_in: 1 week
+  script:
+  - cd 01R_basics
+  - ./helloworld
+  - ./shellutilstest
+
+
+build-02R:
+  tags:
+  - fai
+  stage: build
+  allow_failure: false
+  when: always
+  only:
+    changes:
+    - 02R_zeiger/**/*
+    - .gitlab-ci.yml
+    - TestBib/**/*
+  artifacts:
+    paths:
+    - 02R_zeiger/
+    expire_in: 1 week
+  script:
+  - cd 02R_zeiger/build
+  - cmake ..
+  - make
+
+run-02R:
+  tags:
+  - fai
+  stage: run
+  allow_failure: false 
+  when: on_success  
+  only:
+    changes:
+    - 02R_zeiger/**/*
+    - .gitlab-ci.yml
+    - TestBib/**/*
+  artifacts:
+    paths:
+    - 02R_zeiger/
+    expire_in: 1 week
+  dependencies:
+  - build-02R
+  script:
+  - cd 02R_zeiger/build
+  - ls -alh | tee -a run_test.txt
+  - ./lili | tee -a run_test_output
+  - cd ../test
+  - make && ./lili_test
+  - bash ../../TestBib/checkstyle.sh lili.c
+  - . ../../TestBib/extractEnv.sh ./lili_test
+
+
+build-03R:
+  tags:
+  - fai
+  stage: build
+  allow_failure: false
+  when: always
+  only:
+    changes:
+    - 03R_prozesse/**/*
+    - .gitlab-ci.yml
+    - TestBib/**/*
+  artifacts:
+    paths:
+    - 03R_prozesse/
+    expire_in: 1 week
+  script:
+  - cd 03R_prozesse/build
+  - cmake ..
+  - make
+
+run-03R:
+  tags:
+  - fai
+  stage: run
+  allow_failure: false 
+  when: on_success  
+  only:
+    changes:
+    - 03R_prozesse/**/*
+    - .gitlab-ci.yml
+    - TestBib/**/*
+  artifacts:
+    paths:
+    - 03R_prozesse/
+    expire_in: 1 week
+  dependencies:
+  - build-03R
+  script:
+  - cd 03R_prozesse/build
+  - ./myshell_test
+  - . ../../TestBib/extractEnv.sh ./myshell_test
+  - cd ../myshell/src
+  - bash ../../../TestBib/checkstyle.sh plist.c
+  - bash ../../../TestBib/checkstyle.sh shellfunctions.c
+
+build-05R:
+  tags:
+  - fai
+  stage: build
+  allow_failure: false
+  when: always
+  only:
+    changes:
+    - 05R_*/**/*
+    - .gitlab-ci.yml
+    - TestBib/**/*
+  artifacts:
+    paths:
+    - 05R_Speicherverwaltung/
+    expire_in: 1 week
+  script:
+  - cd 05R_Speicherverwaltung/build;
+  - cmake .. && make;
+  
+run-05R-no-free:
+  tags:
+  - fai
+  stage: run
+  allow_failure: false
+  when: on_success
+  only:
+    changes:
+    - 05R_*/**/*
+    - .gitlab-ci.yml
+    - TestBib/**/*
+  dependencies:
+  - build-05R
+  artifacts:
+    paths:
+    - 05R_Speicherverwaltung/
+    expire_in: 1 week
+  script:
+  - cd 05R_Speicherverwaltung/build/;
+  - ./mymalloc -no-free;
+  - ../../TestBib/extractEnv.sh "./mymalloc -no-free";
+
+run-05R-no-merge:
+  tags:
+  - fai
+  stage: run
+  allow_failure: false
+  when: on_success
+  only:
+    changes:
+    - 05R_*/**/*
+    - .gitlab-ci.yml
+    - TestBib/**/*
+  dependencies:
+  - build-05R
+  artifacts:
+    paths:
+    - 05R_Speicherverwaltung/
+    expire_in: 1 week
+  script:
+  - cd 05R_Speicherverwaltung/build/;
+  - ./mymalloc -no-merge;
+  - ../../TestBib/extractEnv.sh "./mymalloc -no-merge";
+
+run-05R-final:
+  tags:
+  - fai
+  stage: run
+  allow_failure: false
+  when: on_success
+  only:
+    changes:
+    - 05R_*/**/*
+    - .gitlab-ci.yml
+    - TestBib/**/*
+  dependencies:
+    - build-05R
+  artifacts:
+    paths:
+    - 05R_Speicherverwaltung/
+    expire_in: 1 week
+  script:
+  - cd 05R_Speicherverwaltung/build/;
+  - ./mymalloc -final;
+  - ../../TestBib/extractEnv.sh "./mymalloc -final";
+
+run-05R-summary:
+  tags:
+  - fai
+  stage: run
+  allow_failure: false
+  when: on_success
+  only:
+    changes:
+    - 05R_*/**/*
+    - .gitlab-ci.yml
+    - TestBib/**/*
+  dependencies:
+  - build-05R
+  artifacts:
+    paths:
+    - 05R_Speicherverwaltung/
+    expire_in: 1 week
+  script:
+  - cd 05R_Speicherverwaltung/build/;
+  - . ../../TestBib/extractEnv.sh "./mymalloc -no-free";
+  - MAX_ACHIEVED=$EXERCISE_ACHIEVED;
+  - MAX_ACHIEVABLE=$EXERCISE_ACHIEVABLE_MANUAL;
+  - . ../../TestBib/extractEnv.sh "./mymalloc -no-merge";
+  - if [ "$EXERCISE_ACHIEVED" -gt "$MAX_ACHIEVED" ]; then MAX_ACHIEVED=$EXERCISE_ACHIEVED; fi
+  - if [ "$EXERCISE_ACHIEVABLE_MANUAL" -gt "$MAX_ACHIEVABLE" ]; then MAX_ACHIEVABLE=$EXERCISE_ACHIEVABLE_MANUAL; fi
+  - PASS=$EXERCISE_PASS
+  - . ../../TestBib/extractEnv.sh "./mymalloc -final";
+  - if [ "$EXERCISE_ACHIEVED" -gt "$MAX_ACHIEVED" ]; then MAX_ACHIEVED=$EXERCISE_ACHIEVED; fi
+  - if [ "$EXERCISE_ACHIEVABLE_MANUAL" -gt "$MAX_ACHIEVABLE" ]; then MAX_ACHIEVABLE=$EXERCISE_ACHIEVABLE_MANUAL; fi
+  - if [ "$PASS" -gt "$EXERCISE_PASS" ]; then PASS=$EXERCISE_PASS; fi
+  - echo -e "\x1B[0;33m ========================================= \n => 'Zusammenfassung der Punkte:' $MAX_ACHIEVED/$MAX_ACHIEVABLE Points \n ========================================= \x1B[0m";
+  - exit $PASS;
+
+build-07R:
+  tags:
+    - fai
+  stage: build
+  allow_failure: false
+  when: always
+  only:
+    changes:
+    - 07R_Signale/**/*
+    - .gitlab-ci.yml
+    - TestBib/**/*
+  artifacts:
+    untracked: true
+    paths:
+    - 07R_Signale
+  script:
+  - cd 07R_Signale
+  - rm -rf build && mkdir build && cd build && cmake ..
+  - make
+  - cd ..; cd test; make
+
+run-07R-backtrace:
+  tags:
+    - fai
+  stage: run
+  allow_failure: false
+  when: on_success
+  only:
+    changes:
+    - 07R_Signale/**/*
+    - .gitlab-ci.yml
+    - TestBib/**/*
+  artifacts:
+    untracked: true
+    paths:
+    - 07R_Signale
+    when: always
+  dependencies:
+  - build-07R
+  script:
+  - cd 07R_Signale/build
+  - bash test-backtrace.sh
+
+run-07R-signal:
+  tags:
+    - fai
+  stage: run
+  allow_failure: false
+  when: on_success
+  only:
+    changes:
+    - 07R_Signale/**/*
+    - .gitlab-ci.yml
+    - TestBib/**/*
+  artifacts:
+    untracked: true
+    paths:
+    - 07R_Signale
+    when: always
+  dependencies:
+  - build-07R
+  script:
+  - cd 07R_Signale/build
+  - bash test-signal.sh
+
+run-07R-signal-test:
+  tags:
+    - fai
+  stage: run
+  allow_failure: false
+  when: on_success
+  only:
+    changes:
+    - 07R_Signale/**/*
+    - .gitlab-ci.yml
+    - TestBib/**/*
+  artifacts:
+    untracked: true
+    paths:
+    - 07R_Signale
+    when: always
+  dependencies:
+  - build-07R
+  script:
+  - cd 07R_Signale/test
+  - ./signal_test
+  - . ../../TestBib/extractEnv.sh ./signal_test
+
+build-07R-user-level-scheduling:
+  tags:
+    - fai
+  stage: build
+  allow_failure: false
+  when: always
+  only:
+    changes:
+    - 07R_User_Scheduling/**/*
+    - .gitlab-ci.yml
+  artifacts:
+    untracked: true
+    paths:
+    - 07R_User_Scheduling
+  script:
+  - cd 07R_User_Scheduling
+  - rm -rf build && mkdir build && cd build && cmake ..
+  - make
+
+run-07R-user-level-scheduling:
+  tags:
+    - fai
+  stage: run
+  allow_failure: false
+  when: on_success
+  only:
+    changes:
+    - 07R_User_Scheduling/**/*
+    - .gitlab-ci.yml
+  artifacts:
+    untracked: true
+    paths:
+    - 07R_User_Scheduling
+    when: always
+  dependencies:
+  - build-07R-user-level-scheduling
+  script:
+  - cd 07R_User_Scheduling/build
+  - ./scheduler
+
+build-09R:
+  tags:
+    - fai
+  stage: build
+  allow_failure: false
+  when: always
+  only:
+    changes:
+    - 09R_IPC_threads_client/**/*
+    - .gitlab-ci.yml
+    - TestBib/**/*
+  artifacts:
+    untracked: true
+    paths:
+    - 09R_IPC_threads_client
+  script:
+  - cd 09R_IPC_threads_client
+  - rm -rf build && mkdir build && cd build && cmake ..
+  - make
+
+run-09R:
+  tags:
+    - fai
+  stage: run
+  allow_failure: false
+  when: on_success
+  only:
+    changes:
+    - 09R_IPC_threads_client/**/*
+    - .gitlab-ci.yml
+    - TestBib/**/*
+  artifacts:
+    untracked: true
+    paths:
+    - 09R_IPC_threads_client
+    when: always
+  dependencies:
+  - build-09R
+  script:
+  - cd 09R_IPC_threads_client/build
+  - bash run_tests.bash
+
+
+build-11R:
+  tags:
+    - fai
+  stage: build
+  allow_failure: false
+  when: always
+  only:
+    changes:
+    - 11R_IPC_threads_server/**/*
+    - .gitlab-ci.yml
+    - TestBib/**/*
+  artifacts:
+    untracked: true
+    paths:
+    - 11R_IPC_threads_server
+  script:
+  - cd 11R_IPC_threads_server
+  - rm -rf build && mkdir build && cd build && cmake ..
+  - make
+
+run-11R:
+  tags:
+    - fai
+  stage: run
+  allow_failure: false
+  when: on_success
+  only:
+    changes:
+    - 11R_IPC_threads_server/**/*
+    - .gitlab-ci.yml
+    - TestBib/**/*
+  artifacts:
+    untracked: true
+    paths:
+    - 11R_IPC_threads_server
+    when: always
+  dependencies:
+  - build-11R
+  script:
+  - cd 11R_IPC_threads_server/build
+  - ./myGroup-server > /dev/null 2>&1 & sleep 1; echo -e '\n\n\n\n\n\n\n\n\n\n\n\n' | ../ressources/myGroup-test-client 2>&1 | grep -v '^stty' | sed 's/stty.*device//'
